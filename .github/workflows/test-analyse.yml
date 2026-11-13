@@ -1,0 +1,55 @@
+# Runs the cookie and analytics test of the Bijlex website.
+#
+# The website lives in another repository (CEOBijlex/bijlex-website-v2). This
+# workflow fetches it, builds it and runs `npm run test:analyse`, which plays
+# through a visitor's cookie choices in headless Chrome. Requests to Google and
+# Microsoft are recorded and aborted, so nothing reaches the real statistics.
+#
+# The rule being checked: without the visitor's consent, nothing from Google or
+# Microsoft loads and no cookie is set.
+#
+# Setup, once: if the website repository is private, add a secret named
+# WEBSITE_REPO_TOKEN to this repository (Settings, Secrets and variables,
+# Actions). It must be a fine-grained personal access token with read access to
+# "Contents" of CEOBijlex/bijlex-website-v2.
+name: Test cookies and analytics
+
+on:
+  # Every day at 06:00 UTC.
+  schedule:
+    - cron: '0 6 * * *'
+  # By hand: Actions tab, "Test cookies and analytics", "Run workflow".
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch of the website to test
+        default: main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # .env.production is not in the website repository (.gitignore skips
+      # .env.*), so the Google Analytics ID is given here. It is not a secret.
+      # Keep it equal to VITE_GA_ID in the website's .env.production.
+      VITE_GA_ID: G-5Y85D7X7GF
+    steps:
+      - name: Fetch the website
+        uses: actions/checkout@v4
+        with:
+          repository: CEOBijlex/bijlex-website-v2
+          ref: ${{ inputs.branch || 'main' }}
+          token: ${{ secrets.WEBSITE_REPO_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Chrome is preinstalled on the runner at /usr/bin/google-chrome, one of
+      # the places the test looks.
+      - name: Run the test
+        run: npm run test:analyse

@@ -1,0 +1,3 @@
+# Key files of the Google service account must never be committed.
+*.json
+node_modules/
