@@ -6,25 +6,27 @@
 // Read-only: it logs in as a service account that has the Viewer role on the
 // property and asks the Google Analytics Data API for a few reports.
 //
-// The key file is NOT in this repository and must never be. By default it is
-// read from <home>/.bijlex/analytics-sleutel.json; set BIJLEX_GA_KEY to use
-// another path. The property ID is not a secret.
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
+// The key comes from the environment variable BIJLEX_GA_KEY_JSON: the whole
+// service account JSON file. Locally it is read from .env in this folder
+// (never committed, see .env.example); on GitHub it comes from a secret.
+// The property ID is not a secret.
 import crypto from 'node:crypto';
 
+try { process.loadEnvFile(new URL('.env', import.meta.url)); } catch { /* no .env: use the real environment */ }
+
 const PROPERTY = process.env.BIJLEX_GA_PROPERTY || '564211126'; // "Bijlex Website v2"
-const KEY_FILE = process.env.BIJLEX_GA_KEY || path.join(os.homedir(), '.bijlex', 'analytics-sleutel.json');
 const DAGEN = Math.max(1, parseInt(process.argv[2], 10) || 7);
 const API = `https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}`;
 
 function stop(tekst) { console.error(tekst); process.exit(1); }
 
 async function login() {
+  if (!process.env.BIJLEX_GA_KEY_JSON) {
+    stop('BIJLEX_GA_KEY_JSON ontbreekt. Zet het in .env in deze map (zie .env.example): de hele inhoud van het JSON-bestand van het service-account, op één regel, tussen enkele aanhalingstekens.');
+  }
   let key;
-  try { key = JSON.parse(fs.readFileSync(KEY_FILE, 'utf8')); } catch {
-    stop(`Sleutelbestand niet gevonden of onleesbaar: ${KEY_FILE}\nZet BIJLEX_GA_KEY op het pad naar het JSON-bestand van het service-account.`);
+  try { key = JSON.parse(process.env.BIJLEX_GA_KEY_JSON); } catch {
+    stop('BIJLEX_GA_KEY_JSON is geen geldige JSON. Controleer of de hele inhoud van het sleutelbestand erin staat, tussen enkele aanhalingstekens.');
   }
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const nu = Math.floor(Date.now() / 1000);
@@ -100,8 +102,26 @@ console.log('Alleen bezoekers die statistieken hebben geaccepteerd tellen mee.\n
 
 let mislukt = false;
 try {
+  // Realtime: the last 30 minutes. Google answers these straight away, also
+  // when the reports over days are still not available.
+  const live = (dimensie, metingen) => vraag('runRealtimeReport', {
+    dimensions: [{ name: dimensie }], metrics: metingen.map((name) => ({ name })),
+    orderBys: [{ metric: { metricName: metingen[0] }, desc: true }], limit: 10
+  });
   const nu = await vraag('runRealtimeReport', { metrics: [{ name: 'activeUsers' }] });
-  console.log(`Nu op de site (laatste 30 minuten): ${nu[0]?.[0] ?? 0}\n`);
+  const aantalNu = nu[0]?.[0] ?? 0;
+  console.log(`Nu op de site (laatste 30 minuten): ${aantalNu}`);
+  if (aantalNu) {
+    console.log('\n  Per pagina (bezoekers, paginaweergaven)');
+    tabel((await live('unifiedScreenName', ['activeUsers', 'screenPageViews'])).map((r) => ['  ' + r[0], ...r.slice(1)]));
+    console.log('\n  Per land');
+    tabel((await live('country', ['activeUsers'])).map((r) => ['  ' + r[0], ...r.slice(1)]));
+    console.log('\n  Per apparaat');
+    tabel((await live('deviceCategory', ['activeUsers'])).map((r) => ['  ' + r[0], ...r.slice(1)]));
+    console.log('\n  Gebeurtenissen');
+    tabel((await live('eventName', ['eventCount'])).map((r) => ['  ' + r[0], ...r.slice(1)]));
+  }
+  console.log('');
 
   console.log(`Laatste ${DAGEN} dagen`);
   const [bezoekers = 0, sessies = 0, weergaven = 0] = (await rapport([], ['activeUsers', 'sessions', 'screenPageViews']))[0] || [];

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks pushes that contain keys or tokens. See tools/controleer-geheimen.mjs.
+exec node tools/controleer-geheimen.mjs --push

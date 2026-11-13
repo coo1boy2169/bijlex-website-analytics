@@ -59,6 +59,20 @@ visitor numbers of the Bijlex website from Google Analytics, read-only. Tell
 me in plain Dutch what the numbers say: how many visitors, which pages are
 viewed most, and where visitors come from. If the output says NIET COMPLEET,
 Google did not answer in time: tell me which part is missing and try once
-more after a minute. Do not open, print or copy the key file in
-C:\Users\hrist\.bijlex. Reply in Dutch.
+more after a minute. Do not open, print, copy or commit the .env file in
+that folder; it holds the keys. Reply in Dutch.
+```
+
+## 6. What does Clarity see?
+
+Change 3 to 1 or 2 for a shorter period; Clarity allows at most 3 days.
+
+```
+Run node clarity.mjs 3 in C:\Bijlex\bijlex-website-analytics. It fetches the
+Microsoft Clarity numbers of the Bijlex website, read-only. Tell me in plain
+Dutch what they say: how many visits, how long people stay, how far they
+scroll, and whether there are signs of frustration such as rage clicks or
+dead clicks. Run it only once: Clarity allows 10 calls per day. Do not open,
+print, copy or commit the .env file in that folder; it holds the token.
+Reply in Dutch.
 ```

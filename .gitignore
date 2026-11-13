@@ -1,3 +1,10 @@
-# Key files of the Google service account must never be committed.
+# Keys and tokens must never be committed. They live in .env (see
+# .env.example); these lines also catch key files that land here by accident.
 *.json
+*.txt
+*token*
+*.key
+*.pem
+.env*
+!.env.example
 node_modules/
