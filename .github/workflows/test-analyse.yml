@@ -15,9 +15,11 @@
 name: Test cookies and analytics
 
 on:
-  # Every day at 06:00 UTC.
-  schedule:
-    - cron: '0 6 * * *'
+  # The daily run is switched off until the secret WEBSITE_REPO_TOKEN exists:
+  # the website repository is private, so without it every run would fail.
+  # To switch it on, remove the "#" from the two lines below (06:00 UTC).
+  # schedule:
+  #   - cron: '0 6 * * *'
   # By hand: Actions tab, "Test cookies and analytics", "Run workflow".
   workflow_dispatch:
     inputs:

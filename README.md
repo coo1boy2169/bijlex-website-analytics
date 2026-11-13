@@ -11,14 +11,15 @@ Microsoft loads and no cookie is set.
 ## The pipeline
 
 `.github/workflows/test-analyse.yml` fetches the website, builds it and runs
-`npm run test:analyse`. It runs every day at 06:00 UTC, and by hand from the
-Actions tab ("Test cookies and analytics", "Run workflow").
+`npm run test:analyse`. It runs by hand from the Actions tab ("Test cookies
+and analytics", "Run workflow"). The daily run at 06:00 UTC is switched off in
+the workflow file until the secret below exists.
 
 - Green check: every check printed GOED (passed).
 - Red cross: at least one check printed FOUT (failed). Open the run to see
   which one, then paste prompt 2 from `PROMPTS.md` into Claude Code.
 
-Setup, once: if the website repository is private, add a secret named
+Setup, once: the website repository is private, so add a secret named
 `WEBSITE_REPO_TOKEN` (Settings, Secrets and variables, Actions) holding a
 fine-grained personal access token with read access to "Contents" of
 `CEOBijlex/bijlex-website-v2`.
